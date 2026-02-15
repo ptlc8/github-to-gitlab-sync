@@ -1,0 +1,19 @@
+services:
+  synchronizer:
+    build:
+      context: .
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=${TMPFS_SIZE:-2g}
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITLAB_TOKEN=${GITLAB_TOKEN}
+      - LOGGING_WEBHOOK=${LOGGING_WEBHOOK:-}
+      - GITLAB_HOST=${GITLAB_HOST:-}
+      - MAX_REPOS=${MAX_REPOS:-}
+      - SKIP_ARCHIVED=${SKIP_ARCHIVED:-}
+      - SKIP_DISABLED=${SKIP_DISABLED:-}
+    restart: unless-stopped
+    develop:
+      watch:
+        - action: rebuild
+          path: ./src
