@@ -20,13 +20,15 @@ FROM node:24-slim AS production
 
 WORKDIR /app
 
-# Install git for cloning and pushing repositories
-RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+# Install git for cloning and pushing repositories and cron for scheduling tasks
+RUN apt-get update && apt-get install -y cron git && rm -rf /var/lib/apt/lists/*
+
+COPY entrypoint.sh ./
 
 # Copy built files from the build stage
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 COPY --from=build /app/dist ./dist
 
-CMD ["node", "dist/index.js"]
+ENTRYPOINT ["bash", "entrypoint.sh"]

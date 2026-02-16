@@ -4,6 +4,7 @@ services:
       context: .
     tmpfs:
       - /tmp:rw,noexec,nosuid,nodev,size=${TMPFS_SIZE:-2g}
+    init: true
     environment:
       - GITHUB_TOKEN=${GITHUB_TOKEN}
       - GITLAB_TOKEN=${GITLAB_TOKEN}
@@ -12,6 +13,8 @@ services:
       - MAX_REPOS=${MAX_REPOS:-}
       - SKIP_ARCHIVED=${SKIP_ARCHIVED:-}
       - SKIP_DISABLED=${SKIP_DISABLED:-}
+      - CRON_MINUTE=${CRON_MINUTE:-}
+      - CRON_HOUR=${CRON_HOUR:-}
     restart: unless-stopped
     develop:
       watch:
