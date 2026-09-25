@@ -45,6 +45,18 @@ async function syncRepo(repo: Repo, mirrorRepo: Repo): Promise<void> {
 	});
 }
 
+async function hasSameRefs(repo: Repo, mirrorRepo: Repo): Promise<boolean> {
+	if (!repo.cloneUrl || !mirrorRepo.cloneUrl)
+		throw new Error("Repo has no clone URL (cloneUrl missing)");
+	const refs = await Promise.all([repo.cloneUrl, mirrorRepo.cloneUrl].map(async (url) => {
+		const { stdout } = await execFileAsync("git", ["ls-remote", "--refs", url], {
+			timeout: 1000 * 60 * 5,
+		});
+		return stdout.trim().split("\n").sort().join("\n");
+	}));
+	return refs[0] === refs[1];
+}
+
 async function main() {
 	await log("info", "Starting sync run", {
 		gitlabHost: CONFIG.gitlabHost,
@@ -89,7 +101,7 @@ async function main() {
 				continue;
 			}
 
-			if (new Date(mirrorRepo.pushedAt) >= new Date(repo.pushedAt)) {
+			if (await hasSameRefs(repo, mirrorRepo)) {
 				skipped++;
 				await log("info", "Skipping repo, already up to date", { repo: repo.name });
 				continue;
