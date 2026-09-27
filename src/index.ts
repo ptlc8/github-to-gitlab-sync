@@ -41,7 +41,9 @@ async function syncRepo(repo: Repo, mirrorRepo: Repo): Promise<void> {
 		await execFileAsync("git", ["-C", mirrorDir, "remote", "set-url", "--push", "origin", destinationUrl], { timeout });
 
 		await log("info", "Pushing (mirror)", { repo: repo.name });
-		await execFileAsync("git", ["-C", mirrorDir, "push", "--mirror"], { timeout });
+		// Mirror branches and tags only; leave GitLab's internal MR refs alone.
+		await execFileAsync("git", ["-C", mirrorDir, "-c", "remote.origin.mirror=false", "push", "--prune", "origin",
+			"+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*"], { timeout });
 	});
 }
 
@@ -49,7 +51,7 @@ async function hasSameRefs(repo: Repo, mirrorRepo: Repo): Promise<boolean> {
 	if (!repo.cloneUrl || !mirrorRepo.cloneUrl)
 		throw new Error("Repo has no clone URL (cloneUrl missing)");
 	const refs = await Promise.all([repo.cloneUrl, mirrorRepo.cloneUrl].map(async (url) => {
-		const { stdout } = await execFileAsync("git", ["ls-remote", "--refs", url], {
+		const { stdout } = await execFileAsync("git", ["ls-remote", "--refs", "--heads", "--tags", url], {
 			timeout: 1000 * 60 * 5,
 		});
 		return stdout.trim().split("\n").sort().join("\n");
